@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#020817">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="robots" content="noindex">
+<title>Lana ao vivo</title>
+<style>
+:root {
+  --fundo: #020817;
+  --fundo2: #06204f;
+  --linha: rgba(96, 165, 250, .38);
+  --linha-forte: rgba(125, 211, 252, .85);
+  --texto: #dbeafe;
+  --texto-fraco: #7ea6d8;
+  --azul: #3b82f6;
+  --ciano: #7dd3fc;
+  --alerta: #fca5a5;
+  --mono: "Cascadia Mono", "Cascadia Code", Consolas, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: radial-gradient(120% 90% at 50% 45%, var(--fundo2) 0%, #04122f 45%, var(--fundo) 100%);
+  color: var(--texto);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .04em;
+  overflow: hidden;
+}
+#cena { position: fixed; inset: 0; width: 100%; height: 100%; }
+
+.moldura i { position: fixed; width: 34px; height: 34px; border: 2px solid var(--linha-forte); opacity: .8; }
+.moldura i:nth-child(1) { top: 14px; left: 14px; border-right: 0; border-bottom: 0; }
+.moldura i:nth-child(2) { top: 14px; right: 14px; border-left: 0; border-bottom: 0; }
+.moldura i:nth-child(3) { bottom: 14px; left: 14px; border-right: 0; border-top: 0; }
+.moldura i:nth-child(4) { bottom: 14px; right: 14px; border-left: 0; border-top: 0; }
+
+.topo { position: fixed; top: 26px; left: 64px; right: 64px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+.marca-nome { display: block; font-size: 22px; letter-spacing: .32em; color: var(--ciano); text-shadow: 0 0 18px rgba(125, 211, 252, .55); }
+.marca-sub { display: block; margin-top: 6px; font-size: 10px; color: var(--texto-fraco); letter-spacing: .22em; }
+.relogio { text-align: right; }
+#hora { display: block; font-size: 24px; color: var(--ciano); font-variant-numeric: tabular-nums; text-shadow: 0 0 18px rgba(125, 211, 252, .45); }
+#data { display: block; margin-top: 4px; font-size: 10px; color: var(--texto-fraco); letter-spacing: .2em; text-transform: uppercase; }
+
+.lado { position: fixed; top: 104px; bottom: 60px; width: 264px; display: flex; flex-direction: column; gap: 14px; }
+.lado.esquerdo { left: 40px; }
+.lado.direito { right: 40px; }
+.painel { border: 1px solid var(--linha); background: linear-gradient(180deg, rgba(8, 30, 74, .55), rgba(3, 12, 34, .35)); padding: 12px 14px; position: relative; backdrop-filter: blur(2px); }
+.painel::before { content: ""; position: absolute; top: -1px; left: -1px; width: 16px; height: 16px; border-top: 2px solid var(--linha-forte); border-left: 2px solid var(--linha-forte); }
+.painel::after { content: ""; position: absolute; bottom: -1px; right: -1px; width: 16px; height: 16px; border-bottom: 2px solid var(--linha-forte); border-right: 2px solid var(--linha-forte); }
+.painel.cresce { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.painel h2 { margin: 0 0 10px; font-size: 10px; font-weight: 600; letter-spacing: .3em; color: var(--ciano); }
+.linhas { list-style: none; margin: 0; padding: 0; }
+.linhas li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 1px dashed rgba(96, 165, 250, .2); font-size: 11px; }
+.linhas li:last-child { border-bottom: 0; }
+.linhas span { color: var(--texto-fraco); }
+.linhas b { font-weight: 500; color: var(--texto); font-variant-numeric: tabular-nums; }
+.registro { list-style: none; margin: 0; padding: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; flex: 1; gap: 5px; font-size: 11px; line-height: 1.45; }
+.registro li { color: var(--texto-fraco); overflow-wrap: anywhere; }
+.registro li b { color: var(--ciano); font-weight: 500; margin-right: 6px; }
+.registro li.lana { color: var(--texto); }
+#radar, #onda { display: block; width: 100%; height: auto; }
+#onda { margin-bottom: 8px; }
+.eco { margin: 0; font-size: 12px; line-height: 1.5; color: var(--texto); overflow-wrap: anywhere; }
+
+.centro { position: fixed; left: 320px; right: 320px; bottom: 44px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+.pilulas { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.pilula { border: 1px solid var(--linha); border-radius: 999px; padding: 6px 14px; font-size: 10px; letter-spacing: .26em; color: var(--texto-fraco); background: rgba(3, 12, 34, .6); display: inline-flex; align-items: center; gap: 8px; }
+.pilula.estado b { font-weight: 600; color: var(--ciano); }
+.pilula.estado i { width: 8px; height: 8px; border-radius: 50%; background: #475569; }
+.pilula.estado[data-estado="conectando"] i { background: #fbbf24; animation: pisca 1s infinite; }
+.pilula.estado[data-estado="ouvindo"] i { background: #34d399; box-shadow: 0 0 10px #34d399; }
+.pilula.estado[data-estado="falando"] i { background: var(--ciano); box-shadow: 0 0 12px var(--ciano); animation: pisca .7s infinite; }
+@keyframes pisca { 50% { opacity: .35; } }
+.fala { margin: 0; min-height: 3.2em; max-width: 46ch; font-family: "Segoe UI", system-ui, sans-serif; font-size: clamp(16px, 1.55vw, 22px); line-height: 1.5; letter-spacing: 0; color: #f0f7ff; text-shadow: 0 0 22px rgba(2, 8, 23, .9), 0 0 6px rgba(2, 8, 23, .9); text-wrap: balance; }
+.entrada { display: flex; gap: 8px; width: min(640px, 100%); }
+.entrada input { flex: 1; min-width: 0; background: rgba(3, 12, 34, .75); border: 1px solid var(--linha); color: var(--texto); font: inherit; font-size: 13px; letter-spacing: .02em; padding: 12px 14px; outline: none; }
+.entrada input::placeholder { color: #5b7fb3; }
+.entrada input:focus { border-color: var(--linha-forte); box-shadow: 0 0 0 1px var(--linha-forte), 0 0 22px rgba(59, 130, 246, .35); }
+.entrada button { background: rgba(8, 30, 74, .8); border: 1px solid var(--linha); color: var(--ciano); font: inherit; font-size: 10px; letter-spacing: .26em; padding: 0 16px; cursor: pointer; }
+.entrada button:hover { border-color: var(--linha-forte); }
+.entrada button.principal { background: var(--azul); border-color: var(--ciano); color: #fff; }
+.entrada button.principal[data-ligada="1"] { background: rgba(127, 29, 29, .7); border-color: var(--alerta); color: #fecaca; }
+.entrada button:focus-visible { outline: 2px solid var(--ciano); outline-offset: 2px; }
+.aviso { margin: 0; font-size: 11px; color: var(--alerta); letter-spacing: .04em; max-width: 60ch; }
+
+.dados { position: fixed; top: 104px; bottom: 60px; right: 40px; width: 400px; z-index: 5; display: flex; flex-direction: column; border: 1px solid var(--linha-forte); background: linear-gradient(180deg, rgba(4, 18, 47, .96), rgba(2, 8, 23, .96)); box-shadow: 0 0 40px rgba(59, 130, 246, .25); }
+.dados[hidden] { display: none; }
+.dados header { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--linha); }
+.dados h2 { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .3em; color: var(--ciano); }
+.dados header button { background: transparent; border: 1px solid var(--linha); color: var(--texto-fraco); font: inherit; font-size: 9px; letter-spacing: .24em; padding: 6px 10px; cursor: pointer; }
+.dados header button:hover { color: var(--ciano); border-color: var(--linha-forte); }
+.dados-corpo { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; scrollbar-width: thin; scrollbar-color: var(--linha) transparent; }
+.cartao { border: 1px solid var(--linha); background: rgba(8, 30, 74, .5); padding: 11px 12px; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: start; }
+.cartao.destaque { border-color: var(--ciano); box-shadow: 0 0 0 1px var(--ciano), 0 0 26px rgba(125, 211, 252, .45); }
+.cartao .n { grid-row: span 3; font-size: 18px; color: var(--ciano); font-variant-numeric: tabular-nums; min-width: 52px; }
+.cartao .n small { display: block; font-size: 9px; letter-spacing: .16em; color: var(--texto-fraco); margin-top: 2px; }
+.cartao .t { font-family: "Segoe UI", system-ui, sans-serif; font-size: 14px; letter-spacing: 0; color: #f0f7ff; line-height: 1.35; overflow-wrap: anywhere; }
+.cartao .s { font-size: 11px; color: var(--texto-fraco); line-height: 1.45; letter-spacing: .02em; overflow-wrap: anywhere; }
+.cartao .s b { color: var(--ciano); font-weight: 600; }
+.cartao a { justify-self: start; font-size: 10px; letter-spacing: .2em; color: var(--ciano); text-decoration: none; border: 1px solid var(--linha); padding: 5px 9px; margin-top: 3px; }
+.cartao a:hover, .cartao a:focus-visible { border-color: var(--linha-forte); background: rgba(59, 130, 246, .25); outline: none; }
+.dados .codigo { margin: 0; padding: 10px; border: 1px dashed var(--linha-forte); font-size: 12px; line-height: 1.6; color: var(--ciano); overflow-wrap: anywhere; user-select: all; }
+.dados .copiar { align-self: flex-start; background: var(--azul); border: 1px solid var(--ciano); color: #fff; font: inherit; font-size: 10px; letter-spacing: .24em; padding: 12px 16px; cursor: pointer; }
+.dados .vazio { color: var(--texto-fraco); font-size: 12px; padding: 8px 2px; }
+body.com-dados .lado.direito { visibility: hidden; }
+
+@media (max-width: 1100px) {
+  .dados { left: 16px; right: 16px; width: auto; top: auto; bottom: 16px; max-height: 62vh; }
+  .lado { display: none; }
+  .centro { left: 20px; right: 20px; }
+  .topo { left: 28px; right: 28px; }
+}
+@media (max-width: 560px) {
+  .marca-sub, #data { display: none; }
+  .entrada { flex-wrap: wrap; }
+  .entrada input { flex-basis: 100%; }
+  .entrada button { flex: 1; padding: 12px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pilula.estado i { animation: none !important; }
+}
+</style>
+</head>
+<body>
+<canvas id="cena" aria-hidden="true"></canvas>
+
+<div class="moldura" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+<header class="topo">
+  <div class="marca">
+    <span class="marca-nome">L.A.N.A.</span>
+    <span class="marca-sub">CENTRAL DE INTELIGÊNCIA · DROGA NEWS</span>
+  </div>
+  <div class="relogio">
+    <span id="hora">--:--:--</span>
+    <span id="data">--</span>
+  </div>
+</header>
+
+<aside class="lado esquerdo">
+  <section class="painel">
+    <h2>SISTEMA</h2>
+    <ul class="linhas" id="sistema">
+      <li><span>CONEXÃO</span><b id="s-conexao">DESLIGADA</b></li>
+      <li><span>MICROFONE</span><b id="s-mic">—</b></li>
+      <li><span>VOZ</span><b>NAYARA</b></li>
+      <li><span>MODO</span><b>SÓ CONSULTA</b></li>
+      <li><span>SESSÃO</span><b id="s-tempo">00:00</b></li>
+    </ul>
+  </section>
+  <section class="painel cresce">
+    <h2>REGISTRO</h2>
+    <ol class="registro" id="registro"></ol>
+  </section>
+</aside>
+
+<aside class="lado direito">
+  <section class="painel">
+    <h2>VARREDURA</h2>
+    <canvas id="radar" width="220" height="220"></canvas>
+  </section>
+  <section class="painel">
+    <h2>ÁUDIO</h2>
+    <canvas id="onda" width="260" height="84"></canvas>
+    <ul class="linhas">
+      <li><span>ENTRADA</span><b id="n-entrada">0%</b></li>
+      <li><span>SAÍDA</span><b id="n-saida">0%</b></li>
+    </ul>
+  </section>
+  <section class="painel cresce">
+    <h2>VOCÊ DISSE</h2>
+    <p class="eco" id="eco">—</p>
+  </section>
+</aside>
+
+<section class="dados" id="dados" hidden aria-live="polite">
+  <header>
+    <h2 id="dados-titulo">DADOS</h2>
+    <button type="button" id="dados-fechar" title="Fechar painel">FECHAR</button>
+  </header>
+  <div class="dados-corpo" id="dados-corpo"></div>
+</section>
+
+<main class="centro">
+  <div class="pilulas">
+    <span class="pilula estado" id="estado" data-estado="parada"><i></i><b id="estado-txt">AGUARDANDO</b></span>
+    <span class="pilula">LANA · NAYARA</span>
+  </div>
+  <p class="fala" id="fala" aria-live="polite">Diga “Ei, Lana” ou toque em Iniciar.</p>
+  <form class="entrada" id="form">
+    <input id="texto" type="text" autocomplete="off" placeholder="Fale ou digite para a Lana..." aria-label="Mensagem para a Lana">
+    <button type="submit" id="enviar" title="Enviar">ENVIAR</button>
+    <button type="button" id="ligar" class="principal">INICIAR</button>
+  </form>
+  <p class="aviso" id="aviso" hidden></p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.38.0/dist/lib.iife.js"></script>
+<script>window.LANA_CONFIG = { modo: 'celular', sessaoUrl: 'https://n8n.henriquefarma.tech/webhook/lana-voz-sessao-4e81c0a97d3b25f6' };</script>
+<script>
+/* Lana ao vivo: tela local. A chave do ElevenLabs nunca chega aqui:
+   a página pede ao programa local (/api/sessao) um link assinado de uso único. */
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+  var DEMO = params.get('demo') === '1';
+  var CFG = window.LANA_CONFIG || {};
+  var CELULAR = CFG.modo === 'celular';
+  var CONVITE = CELULAR ? 'Toque em Iniciar para falar com a Lana.' : 'Diga “Ei, Lana” ou toque em Iniciar.';
+  var REDUZ = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var conv = null;
+  var estado = 'parada'; // parada | conectando | ouvindo | falando
+  var inicioSessao = 0;
+  var pendente = '';
+  var nivelEntrada = 0, nivelSaida = 0, nivel = 0;
+
+  /* ---------- relógio ---------- */
+  function relogio() {
+    var d = new Date();
+    $('hora').textContent = d.toLocaleTimeString('pt-BR', { hour12: false });
+    $('data').textContent = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+    if (inicioSessao) {
+      var s = Math.floor((Date.now() - inicioSessao) / 1000);
+      $('s-tempo').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    }
+  }
+  setInterval(relogio, 500); relogio();
+
+  /* ---------- registro e textos ---------- */
+  function registrar(quem, texto, classe) {
+    var li = document.createElement('li');
+    if (classe) li.className = classe;
+    var b = document.createElement('b');
+    b.textContent = new Date().toLocaleTimeString('pt-BR', { hour12: false }).slice(0, 5) + ' ' + quem;
+    li.appendChild(b);
+    li.appendChild(document.createTextNode(String(texto).slice(0, 160)));
+    var ol = $('registro');
+    ol.appendChild(li);
+    while (ol.children.length > 40) ol.removeChild(ol.firstChild);
+  }
+  function avisar(msg) {
+    var a = $('aviso');
+    if (!msg) { a.hidden = true; a.textContent = ''; return; }
+    a.hidden = false; a.textContent = msg;
+  }
+  function limparFala(t) {
+    // tira marcações de emoção do modelo de voz, ex.: [risos]
+    return String(t || '').replace(/\[[^\]]{1,24}\]/g, '').replace(/\s+/g, ' ').trim();
+  }
+  function traduzir(msg) {
+    msg = String(msg || '');
+    if (/permission|notallowed|denied/i.test(msg)) return 'O microfone está bloqueado. Libere o microfone para este endereço no navegador e no Windows, depois toque em Iniciar.';
+    if (/notfound|requested device/i.test(msg)) return 'Não achei nenhum microfone neste computador.';
+    if (/connection closed|websocket|network|failed to fetch/i.test(msg)) return 'A conexão com a Lana caiu. Confira a internet e toque em Iniciar de novo.';
+    return msg;
+  }
+  var ROTULO = { parada: 'AGUARDANDO', conectando: 'CONECTANDO', ouvindo: 'OUVINDO', falando: 'FALANDO' };
+  function mudarEstado(e) {
+    estado = e;
+    $('estado').dataset.estado = e;
+    $('estado-txt').textContent = ROTULO[e];
+    var ligada = e !== 'parada';
+    $('ligar').textContent = ligada ? 'ENCERRAR' : 'INICIAR';
+    $('ligar').dataset.ligada = ligada ? '1' : '0';
+    $('s-conexao').textContent = e === 'parada' ? 'DESLIGADA' : (e === 'conectando' ? 'CONECTANDO' : 'ATIVA');
+  }
+  function avisarPrograma(ativa) {
+    if (DEMO || CELULAR) return;
+    fetch('/api/estado', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ativa: ativa }) }).catch(function () {});
+  }
+
+  /* ---------- painel de dados (cartões) ---------- */
+  var ultimasOfertas = [], ultimaAgenda = [];
+  function el(tag, classe, texto) { var e = document.createElement(tag); if (classe) e.className = classe; if (texto !== undefined && texto !== null) e.textContent = String(texto); return e; }
+  function linkSeguro(u) { u = String(u || ''); return /^https?:\/\//i.test(u) ? u : ''; }
+  function mapaDe(local) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(String(local || '')); }
+  function reais(n) { var v = Number(n); if (!isFinite(v)) return ''; return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+  function botao(texto, url) { var a = el('a', '', texto); a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; return a; }
+  function abrirPainel(titulo, cartoes, vazio) {
+    $('dados-titulo').textContent = titulo;
+    var corpo = $('dados-corpo'); corpo.textContent = '';
+    if (!cartoes.length) corpo.appendChild(el('p', 'vazio', vazio || 'Nada para mostrar.'));
+    cartoes.forEach(function (c) { corpo.appendChild(c); });
+    $('dados').hidden = false; document.body.classList.add('com-dados');
+  }
+  function fecharPainel() { $('dados').hidden = true; document.body.classList.remove('com-dados'); }
+  $('dados-fechar').addEventListener('click', fecharPainel);
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') fecharPainel(); });
+
+  function cartaoBase(numero, rotulo, titulo, linhas) {
+    var c = el('article', 'cartao');
+    var n = el('div', 'n', numero); if (rotulo) n.appendChild(el('small', '', rotulo)); c.appendChild(n);
+    c.appendChild(el('div', 't', titulo));
+    (linhas || []).forEach(function (l) { if (l) c.appendChild(typeof l === 'string' ? el('div', 's', l) : l); });
+    return c;
+  }
+  function mostrarAgenda(d) {
+    ultimaAgenda = Array.isArray(d.compromissos) ? d.compromissos : [];
+    var cartoes = ultimaAgenda.map(function (e) {
+      var hora = e.dia_inteiro ? 'DIA' : (e.inicio || '--:--');
+      var linhas = [(e.dia || '') + (e.fim ? ' · até ' + e.fim : '') + (e.ja_passou ? ' · já passou' : '')];
+      if (e.local) { linhas.push(e.local); linhas.push(botao('ABRIR MAPA', mapaDe(e.local))); }
+      return cartaoBase(hora, e.dia_inteiro ? 'INTEIRO' : '', e.titulo || '(sem título)', linhas);
+    });
+    abrirPainel('AGENDA · ' + String(d.periodo || '').toUpperCase(), cartoes, d.obs || 'Nenhum compromisso nesse período.');
+  }
+  function mostrarOfertas(d) {
+    ultimasOfertas = Array.isArray(d.ofertas) ? d.ofertas : [];
+    var cartoes = ultimasOfertas.map(function (o, i) {
+      var linhas = [];
+      var p = el('div', 's'); var b = el('b', '', reais(o.preco)); p.appendChild(b);
+      if (o.quantidade > 1) p.appendChild(document.createTextNode(' · ' + o.quantidade + ' un · ' + reais(o.preco_por_unidade) + ' por unidade'));
+      linhas.push(p); linhas.push(o.produto || '');
+      var u = linkSeguro(o.link); if (u) linhas.push(botao('ABRIR OFERTA', u));
+      return cartaoBase(String(i + 1), o.dentro_do_teto === false ? 'ACIMA' : '', o.loja || 'Loja', linhas);
+    });
+    abrirPainel('OFERTAS · ' + String(d.produto_procurado || '').toUpperCase().slice(0, 34), cartoes, d.obs || 'Nenhuma oferta confirmada.');
+  }
+  function mostrarPendencias(d) {
+    var cartoes = [];
+    var cob = (d.cobrancas_em_aberto && d.cobrancas_em_aberto.itens) || [];
+    cob.forEach(function (c) { cartoes.push(cartaoBase(c.id || '—', 'COBRANÇA', c.pessoa || '', [c.situacao + (c.enviada_em ? ' · ' + c.enviada_em : ''), c.assunto])); });
+    [['tarefas_de_hoje', 'HOJE'], ['tarefas_em_andamento', 'ANDAMENTO'], ['aguardando_terceiros', 'AGUARDA']].forEach(function (g) {
+      var it = (d[g[0]] && d[g[0]].itens) || [];
+      it.forEach(function (t) { cartoes.push(cartaoBase(t.id || '—', g[1], t.tarefa || '', [(t.prioridade || '') + (t.para_quando ? ' · ' + t.para_quando : '') + (t.aguardando ? ' · ' + t.aguardando : '')])); });
+    });
+    abrirPainel('PENDÊNCIAS', cartoes, 'Nada em aberto.');
+  }
+  function mostrarContatos(d) {
+    var cartoes = (d.contatos || []).map(function (c) { return cartaoBase('☎', '', c.nome || '', [c.telefone, (c.tipo || '') + (c.contexto ? ' · ' + c.contexto : ''), c.detalhe]); });
+    abrirPainel('CONTATOS', cartoes, d.obs || 'Nenhum contato encontrado.');
+  }
+  function aoResultadoDeFerramenta(p) {
+    if (!p || p.is_error || !p.full_tool_result) return;
+    var d; try { d = JSON.parse(p.full_tool_result); if (typeof d === 'string') d = JSON.parse(d); } catch (e) { return; }
+    if (!d || d.ok === false) return;
+    if (p.tool_name === 'consultar_agenda') mostrarAgenda(d);
+    else if (p.tool_name === 'buscar_produto') mostrarOfertas(d);
+    else if (p.tool_name === 'consultar_pendencias') mostrarPendencias(d);
+    else if (p.tool_name === 'procurar_contato') mostrarContatos(d);
+    registrar('SISTEMA', 'Consulta: ' + String(p.tool_name || '').replace(/_/g, ' '));
+  }
+  /* ferramenta de tela: a Lana pede para abrir uma oferta ou um mapa */
+  function abrirNaTela(a) {
+    a = a || {};
+    var n = Math.max(1, parseInt(a.numero, 10) || 1) - 1; var url = '', cartoes = $('dados-corpo').querySelectorAll('.cartao');
+    if (a.o_que === 'oferta') { if (!ultimasOfertas[n]) return 'Não há oferta com esse número na tela.'; url = linkSeguro(ultimasOfertas[n].link); }
+    else if (a.o_que === 'mapa') { var lugar = a.endereco || (ultimaAgenda[n] && ultimaAgenda[n].local) || ''; if (!lugar) return 'Não tenho endereço para abrir.'; url = mapaDe(lugar); }
+    else if (a.o_que === 'fechar') { fecharPainel(); return 'Painel fechado.'; }
+    if (!url) return 'Não tenho o que abrir.';
+    cartoes.forEach(function (c) { c.classList.remove('destaque'); });
+    if (!a.endereco && cartoes[n]) { cartoes[n].classList.add('destaque'); cartoes[n].scrollIntoView({ block: 'nearest' }); }
+    try { window.open(url, '_blank', 'noopener'); } catch (e) {}
+    return 'Pedi ao navegador para abrir em outra aba. Se não abrir, o cartão está destacado na tela para o Sr. Ricardo clicar.';
+  }
+
+  /* ---------- sessão: no PC pede ao programa local; no celular pede direto ao n8n com a chave do aparelho ---------- */
+  function chaveDoAparelho() {
+    var k = '';
+    try { k = localStorage.getItem('lana-chave') || ''; } catch (e) { throw new Error('ISOLADA'); }
+    if (k.length < 40) {
+      var b = new Uint8Array(36); crypto.getRandomValues(b);
+      k = Array.prototype.map.call(b, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+      localStorage.setItem('lana-chave', k);
+    }
+    return k;
+  }
+  async function codigoDoAparelho() {
+    var h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(chaveDoAparelho()));
+    return Array.prototype.map.call(new Uint8Array(h), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+  }
+  async function mostrarCodigo() {
+    var cod = await codigoDoAparelho();
+    abrirPainel('LIBERAR ESTE CELULAR', [], '');
+    var corpo = $('dados-corpo'); corpo.textContent = '';
+    corpo.appendChild(el('p', 'vazio', 'Este celular ainda não foi liberado. Copie o código abaixo e mande para o Claude no chat. Ele não é senha.'));
+    var caixa = el('p', 'codigo', cod); corpo.appendChild(caixa);
+    var bt = el('button', 'copiar', 'COPIAR CÓDIGO'); bt.type = 'button';
+    bt.addEventListener('click', function () {
+      var ok = function () { bt.textContent = 'COPIADO'; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(cod).then(ok, function () {});
+      else { var r = document.createRange(); r.selectNodeContents(caixa); var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+    });
+    corpo.appendChild(bt);
+  }
+  async function pedirSessao() {
+    if (!CELULAR) {
+      var r = await fetch('/api/sessao', { method: 'POST' });
+      var j = await r.json().catch(function () { return {}; });
+      if (!r.ok || !j.signed_url) throw new Error(j.erro || 'O programa local não conseguiu abrir a sessão.');
+      return j;
+    }
+    var chave;
+    try { chave = chaveDoAparelho(); } catch (e) { throw new Error('O navegador bloqueou o armazenamento desta página. Abra pelo endereço oficial da Lana no celular.'); }
+    // formulário simples: funciona com a página em outro endereço, sem checagem prévia do navegador
+    var r2 = await fetch(CFG.sessaoUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'aparelho=' + encodeURIComponent(chave) });
+    var j2 = await r2.json().catch(function () { return {}; });
+    if (r2.status === 403) { mostrarCodigo(); throw new Error('Este celular ainda não foi liberado.'); }
+    if (!r2.ok || !j2.signed_url) throw new Error(j2.erro || 'Não consegui abrir a conversa agora.');
+    return j2;
+  }
+  var trava = null;
+  function manterTelaLigada(sim) {
+    try {
+      if (sim && navigator.wakeLock) navigator.wakeLock.request('screen').then(function (t) { trava = t; }, function () {});
+      else if (trava) { trava.release(); trava = null; }
+    } catch (e) {}
+  }
+
+  /* ---------- conversa ---------- */
+  async function ligar() {
+    if (conv || estado === 'conectando') return;
+    avisar('');
+    mudarEstado('conectando');
+    $('fala').textContent = 'Conectando...';
+    if (DEMO) { demoLigar(); return; }
+    try {
+      if (!window.ElevenLabsClient) throw new Error('Não consegui carregar o módulo de voz. Confira a internet e recarregue a página.');
+      var j = await pedirSessao();
+      avisarPrograma(true);
+      conv = await window.ElevenLabsClient.Conversation.startSession({
+        signedUrl: j.signed_url,
+        connectionType: 'websocket',
+        onConnect: function () {
+          inicioSessao = Date.now();
+          $('s-mic').textContent = 'LIGADO';
+          mudarEstado('ouvindo');
+          registrar('SISTEMA', 'Sessão iniciada');
+          manterTelaLigada(true);
+        },
+        onDisconnect: function () { encerrarLocal('Sessão encerrada'); },
+        onAgentToolResponse: aoResultadoDeFerramenta,
+        clientTools: { abrir_na_tela: abrirNaTela },
+        onModeChange: function (m) { if (conv) mudarEstado(m && m.mode === 'speaking' ? 'falando' : 'ouvindo'); },
+        onMessage: function (m) {
+          var txt = limparFala(m && m.message);
+          if (!txt) return;
+          if ((m.role || m.source) === 'user') { $('eco').textContent = txt; registrar('VOCÊ', txt); }
+          else { $('fala').textContent = txt; registrar('LANA', txt, 'lana'); }
+        },
+        onError: function (e) {
+          var msg = traduzir(typeof e === 'string' ? e : (e && e.message) || 'Erro na conversa.');
+          if ($('aviso').textContent !== msg) { avisar(msg); registrar('ERRO', msg); }
+        }
+      });
+      if (pendente) { var p = pendente; pendente = ''; setTimeout(function () { enviarTexto(p); }, 600); }
+    } catch (e) {
+      var msg = traduzir((e && e.message) || String(e));
+      if ($('aviso').textContent !== msg) { avisar(msg); registrar('ERRO', msg); }
+      encerrarLocal('');
+    }
+  }
+  function encerrarLocal(motivo) {
+    conv = null;
+    inicioSessao = 0;
+    nivelEntrada = nivelSaida = 0;
+    $('s-mic').textContent = '—';
+    manterTelaLigada(false);
+    mudarEstado('parada');
+    avisarPrograma(false);
+    if (motivo) registrar('SISTEMA', motivo);
+    $('fala').textContent = CONVITE;
+  }
+  async function desligar() {
+    if (DEMO) { clearInterval(demoT); encerrarLocal('Sessão encerrada'); return; }
+    var c = conv;
+    if (!c) { encerrarLocal(''); return; }
+    try { await c.endSession(); } catch (e) { encerrarLocal('Sessão encerrada'); }
+  }
+  function enviarTexto(t) {
+    t = String(t || '').trim();
+    if (!t) return;
+    if (!conv) { pendente = t; ligar(); return; }
+    try { conv.sendUserMessage(t); $('eco').textContent = t; registrar('VOCÊ', t); }
+    catch (e) { avisar('Não consegui enviar o texto.'); }
+  }
+
+  $('ligar').addEventListener('click', function () { if (estado === 'parada') ligar(); else desligar(); });
+  $('form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var t = $('texto').value; $('texto').value = '';
+    enviarTexto(t);
+  });
+  $('texto').addEventListener('input', function () { if (conv) { try { conv.sendUserActivity(); } catch (e) {} } });
+  window.addEventListener('beforeunload', function () { if (conv) { try { conv.endSession(); } catch (e) {} } avisarPrograma(false); });
+
+  /* o programa local avisa quando ouviu "Ei, Lana" */
+  if (!DEMO && !CELULAR) {
+    setInterval(function () {
+      fetch('/api/acordar', { method: 'POST' }).then(function (r) { return r.json(); }).then(function (j) {
+        if (j && j.acordar && estado === 'parada') { registrar('SISTEMA', 'Palavra de ativação ouvida'); ligar(); }
+      }).catch(function () {});
+    }, 1000);
+    if (params.get('auto') === '1') setTimeout(ligar, 400);
+  }
+
+  /* ---------- modo demonstração (sem conexão) ---------- */
+  var demoT = 0;
+  function demoLigar() {
+    var falas = ['Sr. Ricardo, hoje são três compromissos, todos na loja da Estrada do Galeão.', 'O primeiro é com o Glauber, às nove da manhã.', 'Quer que eu mande os links no seu WhatsApp?'];
+    var i = 0;
+    inicioSessao = Date.now(); $('s-mic').textContent = 'LIGADO';
+    conv = { demo: true, endSession: function () {}, sendUserMessage: function () {}, sendUserActivity: function () {} };
+    var passo = function () {
+      if (i % 2 === 0) { mudarEstado('falando'); $('fala').textContent = falas[(i / 2) % falas.length]; registrar('LANA', falas[(i / 2) % falas.length], 'lana'); }
+      else { mudarEstado('ouvindo'); $('eco').textContent = 'O que eu tenho hoje?'; registrar('VOCÊ', 'O que eu tenho hoje?'); }
+      i++;
+    };
+    passo(); demoT = setInterval(passo, 3500);
+    var qual = params.get('cartoes');
+    if (qual === 'agenda') aoResultadoDeFerramenta({ tool_name: 'consultar_agenda', full_tool_result: JSON.stringify({ ok: true, periodo: 'hoje', compromissos: [{ titulo: 'Glauber — Reunião com o Ricardinho', dia: 'quinta 26/11', inicio: '09:00', fim: '10:00', local: 'Estrada do Galeão, 1401, loja B, Ilha do Governador' }, { titulo: 'Lucas Guimarães — Reunião', dia: 'quinta 26/11', inicio: '10:00', fim: '11:00', local: 'Estrada do Galeão, 1401, loja B, Ilha do Governador' }, { titulo: 'Vanessa Cimed — Atendimento', dia: 'quinta 26/11', inicio: '14:00', fim: '15:00', local: 'Estrada do Galeão, 1401, loja B' }] }) });
+    if (qual === 'ofertas') { aoResultadoDeFerramenta({ tool_name: 'buscar_produto', full_tool_result: JSON.stringify({ ok: true, produto_procurado: 'fralda huggies xg', ofertas: [{ loja: 'Mercado Livre', produto: 'Fralda Huggies Supreme Care XG 56 unidades', preco: 67.99, quantidade: 56, preco_por_unidade: 1.21, dentro_do_teto: true, link: 'https://example.com/a' }, { loja: 'Efácil', produto: 'Fralda Huggies Supreme Care XG 198 unidades', preco: 247.9, quantidade: 198, preco_por_unidade: 1.25, dentro_do_teto: true, link: 'https://example.com/b' }, { loja: 'Drogasil', produto: 'Fralda Huggies Tripla Proteção XG 30 unidades', preco: 49.9, quantidade: 30, preco_por_unidade: 1.66, dentro_do_teto: false, link: 'https://example.com/c' }] }) }); abrirNaTela({ o_que: 'nada' }); $('dados-corpo').querySelectorAll('.cartao')[0].classList.add('destaque'); }
+  }
+
+  /* ---------- níveis de áudio ---------- */
+  function media(arr) {
+    if (!arr || !arr.length) return 0;
+    var s = 0; for (var i = 0; i < arr.length; i++) s += arr[i];
+    return s / arr.length / 255;
+  }
+  var espectro = new Uint8Array(0);
+  function lerAudio(t) {
+    var e = 0, s = 0;
+    if (conv && conv.demo) {
+      var f = estado === 'falando';
+      s = f ? 0.25 + 0.25 * Math.abs(Math.sin(t / 130)) * Math.abs(Math.sin(t / 470)) : 0;
+      e = !f ? 0.12 + 0.2 * Math.abs(Math.sin(t / 210)) : 0;
+      espectro = new Uint8Array(48).map(function (_, k) { return (f ? 150 : 90) * Math.abs(Math.sin(t / 160 + k * 0.5)) * Math.abs(Math.cos(k * 0.21 + t / 900)); });
+    } else if (conv) {
+      try {
+        var fi = conv.getInputByteFrequencyData(); var fo = conv.getOutputByteFrequencyData();
+        e = media(fi); s = media(fo);
+        espectro = estado === 'falando' ? fo : fi;
+      } catch (err) {}
+    }
+    nivelEntrada += (e - nivelEntrada) * 0.3;
+    nivelSaida += (s - nivelSaida) * 0.3;
+    nivel = Math.min(1, Math.max(nivelEntrada, nivelSaida) * 2.4);
+    $('n-entrada').textContent = Math.round(Math.min(1, nivelEntrada * 2.4) * 100) + '%';
+    $('n-saida').textContent = Math.round(Math.min(1, nivelSaida * 2.4) * 100) + '%';
+  }
+
+  /* ---------- esfera de partículas ---------- */
+  var cv = $('cena'); var cx = cv.getContext('2d');
+  var W = 0, H = 0, DPR = 1;
+  function ajustar() {
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', ajustar); ajustar();
+
+  var N = 1100; var pts = [];
+  (function () {
+    var ouro = Math.PI * (3 - Math.sqrt(5));
+    for (var i = 0; i < N; i++) {
+      var y = 1 - (i / (N - 1)) * 2; var r = Math.sqrt(1 - y * y); var a = ouro * i;
+      pts.push({ x: Math.cos(a) * r, y: y, z: Math.sin(a) * r, f: Math.random() * 6.28, v: 0.6 + Math.random() * 0.8 });
+    }
+  })();
+  var poeira = []; for (var k = 0; k < 90; k++) poeira.push({ x: Math.random(), y: Math.random(), s: Math.random() * 1.4 + 0.3, v: Math.random() * 0.00004 + 0.00001 });
+
+  function cena(t) {
+    cx.clearRect(0, 0, W, H);
+    var estreito = W < 1100;
+    var ox = W / 2;
+    var oy = H * (estreito ? 0.36 : 0.40);
+    var R = Math.min(W * (estreito ? 0.26 : 0.15), H * (estreito ? 0.2 : 0.185));
+    var falando = estado === 'falando';
+    var ativa = estado !== 'parada';
+
+    // poeira de fundo
+    cx.fillStyle = 'rgba(125,211,252,.35)';
+    for (var d = 0; d < poeira.length; d++) {
+      var p0 = poeira[d]; p0.y -= p0.v * 16; if (p0.y < 0) p0.y = 1;
+      cx.globalAlpha = 0.15 + 0.25 * Math.abs(Math.sin(t / 1800 + d));
+      cx.fillRect(p0.x * W, p0.y * H, p0.s, p0.s);
+    }
+    cx.globalAlpha = 1;
+
+    // brilho
+    var g = cx.createRadialGradient(ox, oy, R * 0.1, ox, oy, R * 2.1);
+    g.addColorStop(0, 'rgba(59,130,246,' + (0.20 + nivel * 0.25) + ')');
+    g.addColorStop(1, 'rgba(59,130,246,0)');
+    cx.fillStyle = g; cx.beginPath(); cx.arc(ox, oy, R * 2.1, 0, 6.2832); cx.fill();
+
+    // partículas
+    var giro = t / (REDUZ ? 60000 : 9000);
+    var cg = Math.cos(giro), sg = Math.sin(giro);
+    var ci = Math.cos(0.35), si = Math.sin(0.35);
+    for (var i = 0; i < N; i++) {
+      var p = pts[i];
+      var onda = Math.sin(t / 420 * p.v + p.f + p.y * 4);
+      var esc = 1 + (ativa ? 0.03 : 0.012) * onda + nivel * (0.10 + 0.22 * Math.max(0, onda));
+      var x = p.x * cg - p.z * sg, z = p.x * sg + p.z * cg, y = p.y;
+      var y2 = y * ci - z * si, z2 = y * si + z * ci;
+      var per = 1 / (1.9 - z2 * 0.55);
+      var px = ox + x * R * esc * per * 1.45, py = oy + y2 * R * esc * per * 1.45;
+      var a = 0.18 + (z2 + 1) * 0.36;
+      cx.fillStyle = z2 > 0.2 ? 'rgba(191,232,255,' + a + ')' : 'rgba(96,165,250,' + a + ')';
+      var tam = (0.7 + (z2 + 1) * 0.75) * (1 + nivel * 0.6);
+      cx.fillRect(px, py, tam, tam);
+    }
+
+    // anéis e marcações
+    var Ra = R * 1.38 + nivel * R * 0.05;
+    cx.lineWidth = 1.5; cx.strokeStyle = 'rgba(125,211,252,.75)';
+    cx.beginPath(); cx.arc(ox, oy, Ra, 0, 6.2832); cx.stroke();
+    cx.lineWidth = 1; cx.strokeStyle = 'rgba(96,165,250,.35)';
+    cx.beginPath(); cx.arc(ox, oy, Ra * 0.94, 0, 6.2832); cx.stroke();
+    var rot = REDUZ ? 0 : t / 14000;
+    for (var m = 0; m < 96; m++) {
+      var an = rot + m / 96 * 6.2832; var maior = m % 8 === 0;
+      var amp = espectro.length ? (espectro[Math.floor(m / 96 * Math.min(espectro.length, 64))] || 0) / 255 : 0;
+      var r1 = Ra * 1.06, r2 = Ra * (maior ? 1.13 : 1.09) + amp * R * 0.28;
+      cx.strokeStyle = maior ? 'rgba(191,232,255,.9)' : 'rgba(125,211,252,' + (0.35 + amp * 0.6) + ')';
+      cx.lineWidth = maior ? 2 : 1;
+      cx.beginPath(); cx.moveTo(ox + Math.cos(an) * r1, oy + Math.sin(an) * r1); cx.lineTo(ox + Math.cos(an) * r2, oy + Math.sin(an) * r2); cx.stroke();
+    }
+    // arcos giratórios
+    cx.lineWidth = 3; cx.strokeStyle = falando ? 'rgba(191,232,255,.95)' : 'rgba(59,130,246,.9)';
+    var ar = REDUZ ? 0.6 : -t / 2600;
+    cx.beginPath(); cx.arc(ox, oy, Ra * 1.2, ar, ar + 1.1); cx.stroke();
+    cx.beginPath(); cx.arc(ox, oy, Ra * 1.2, ar + 3.14, ar + 3.14 + 0.7); cx.stroke();
+    cx.lineWidth = 1; cx.strokeStyle = 'rgba(96,165,250,.3)';
+    cx.setLineDash([2, 7]); cx.beginPath(); cx.arc(ox, oy, Ra * 1.3, 0, 6.2832); cx.stroke(); cx.setLineDash([]);
+    // setas cardeais
+    cx.fillStyle = 'rgba(191,232,255,.9)';
+    for (var q = 0; q < 4; q++) {
+      var aq = q * 1.5708 + 0.7854; var bx = ox + Math.cos(aq) * Ra * 1.3, by = oy + Math.sin(aq) * Ra * 1.3;
+      cx.beginPath(); cx.moveTo(bx, by); cx.lineTo(bx + Math.cos(aq + 2.6) * 9, by + Math.sin(aq + 2.6) * 9); cx.lineTo(bx + Math.cos(aq - 2.6) * 9, by + Math.sin(aq - 2.6) * 9); cx.closePath(); cx.fill();
+    }
+  }
+
+  /* ---------- radar e onda ---------- */
+  var rd = $('radar').getContext('2d'); var on = $('onda').getContext('2d');
+  var hist = [];
+  function radar(t) {
+    var w = 220, c = 110, r = 96;
+    rd.clearRect(0, 0, w, w);
+    rd.strokeStyle = 'rgba(96,165,250,.45)'; rd.lineWidth = 1;
+    for (var i = 1; i <= 3; i++) { rd.beginPath(); rd.arc(c, c, r * i / 3, 0, 6.2832); rd.stroke(); }
+    rd.beginPath(); rd.moveTo(c - r, c); rd.lineTo(c + r, c); rd.moveTo(c, c - r); rd.lineTo(c, c + r); rd.stroke();
+    var a = REDUZ ? 0.9 : t / 1500;
+    var g = rd.createConicGradient ? rd.createConicGradient(a, c, c) : null;
+    if (g) { g.addColorStop(0, 'rgba(125,211,252,0)'); g.addColorStop(0.85, 'rgba(125,211,252,0)'); g.addColorStop(1, 'rgba(125,211,252,.55)'); rd.fillStyle = g; rd.beginPath(); rd.moveTo(c, c); rd.arc(c, c, r, 0, 6.2832); rd.fill(); }
+    rd.strokeStyle = 'rgba(191,232,255,.95)'; rd.lineWidth = 2;
+    rd.beginPath(); rd.moveTo(c, c); rd.lineTo(c + Math.cos(a) * r, c + Math.sin(a) * r); rd.stroke();
+    rd.fillStyle = 'rgba(191,232,255,.9)';
+    for (var k = 0; k < 4; k++) { var ak = k * 1.9 + 0.4, rk = r * (0.35 + 0.15 * k); var al = 1 - ((((a - ak) % 6.2832) + 6.2832) % 6.2832) / 6.2832; rd.globalAlpha = Math.max(0.08, al * (0.4 + nivel)); rd.beginPath(); rd.arc(c + Math.cos(ak) * rk, c + Math.sin(ak) * rk, 3, 0, 6.2832); rd.fill(); }
+    rd.globalAlpha = 1;
+  }
+  function onda() {
+    var w = 260, h = 84;
+    hist.push(nivel); if (hist.length > 65) hist.shift();
+    on.clearRect(0, 0, w, h);
+    on.strokeStyle = 'rgba(96,165,250,.3)'; on.lineWidth = 1; on.strokeRect(0.5, 0.5, w - 1, h - 1);
+    for (var i = 0; i < hist.length; i++) {
+      var v = Math.max(0.03, hist[i]); var bh = v * (h - 14);
+      on.fillStyle = 'rgba(125,211,252,' + (0.35 + v * 0.65) + ')';
+      on.fillRect(4 + i * 3.9, (h - bh) / 2, 2.4, bh);
+    }
+  }
+
+  var ultimo = 0;
+  function quadro(t) {
+    lerAudio(t);
+    cena(t);
+    if (t - ultimo > 50) { radar(t); onda(); ultimo = t; }
+    requestAnimationFrame(quadro);
+  }
+  requestAnimationFrame(quadro);
+
+  mudarEstado('parada');
+  $('fala').textContent = CONVITE;
+  if (DEMO) { registrar('SISTEMA', 'Modo demonstração'); if (params.get('auto') === '1') ligar(); }
+  else registrar('SISTEMA', 'Tela pronta');
+})();
+</script>
+</body>
+</html>
